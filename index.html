@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Summary 562</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .sales-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #27ae60;
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid #27ae60;
+            border-radius: 8px;
+            display: inline-block;
+            min-width: 150px;
+            background-color: #eafaf1;
+        }
+        .loading-text {
+            color: #888;
+        }
+        .error-text {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Total Sales Summary</h1>
+        <p>Sales for categories less than or equal to 12:</p>
+        <div id="total-sales" class="sales-display">
+            <span class="loading-text">Loading...</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const totalSalesElement = document.getElementById('total-sales');
+
+            fetch('public/sales.csv')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    const lines = csvText.trim().split('\n');
+                    if (lines.length === 0) {
+                        throw new Error('CSV file is empty.');
+                    }
+
+                    const headers = lines[0].split(',').map(header => header.trim());
+                    const categoryIndex = headers.indexOf('category');
+                    const salesIndex = headers.indexOf('sales');
+
+                    if (categoryIndex === -1 || salesIndex === -1) {
+                        throw new Error('Missing "category" or "sales" column in CSV.');
+                    }
+
+                    let totalSales = 0;
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',').map(value => value.trim());
+                        if (values.length > Math.max(categoryIndex, salesIndex)) { // Ensure row has enough columns
+                            const category = parseFloat(values[categoryIndex]);
+                            const sales = parseFloat(values[salesIndex]);
+
+                            if (!isNaN(category) && !isNaN(sales) && category <= 12) {
+                                totalSales += sales;
+                            }
+                        }
+                    }
+
+                    totalSalesElement.textContent = totalSales.toFixed(2);
+                })
+                .catch(error => {
+                    console.error('Error fetching or processing sales data:', error);
+                    totalSalesElement.innerHTML = `<span class="error-text">Error: ${error.message}</span>`;
+                });
+        });
+    </script>
+</body>
+</html>
